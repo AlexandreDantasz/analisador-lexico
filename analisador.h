@@ -236,6 +236,19 @@ void analisador_lexicografico(char input[45], FILE * arquivo_saida, int linha, i
                     break;
             }
         }
+
+        else if (input[index_input] == '.')
+        {
+            // Ponto isolado pode ser um ponto final ou um ponto decimal.
+            // Para garantir que é um ponto final, verifica se o próximo caractere é espaço ou delimitador.
+            if (input[index_input + 1] == '\0' || isspace(input[index_input + 1]))
+            {
+                strcpy(token.lexema, ".");
+                strcpy(token.nome, "PONTO_FINAL");
+                index_input++;
+            }
+        }
+
         else 
         {
             strcpy(token.lexema, "Caractere nao identificado");

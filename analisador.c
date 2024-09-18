@@ -35,9 +35,3 @@ int main()
     fclose(arquivo_saida);
     return 0;
 }
-
-/*
-    - A análise deve ser feita por caracteres
-    - Precisa de alguma forma de analisar palavras em conjunto
-
-*/
