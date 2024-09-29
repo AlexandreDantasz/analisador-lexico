@@ -94,7 +94,8 @@ void analisador_lexicografico(char input[45], FILE * arquivo_saida, int linha, i
 {
     Token token;
     token.linha = linha;
-    token.coluna = coluna;
+
+    coluna--;
 
     // A variável a seguir será responsável por separar o input por um único tipo de caractere. 
     // Exemplo: caso a string seja "program;" então a variável pode conter apenas
@@ -119,6 +120,8 @@ void analisador_lexicografico(char input[45], FILE * arquivo_saida, int linha, i
 
             if (comparar_tabela(filtro_input)) strcpy(token.nome, "PAL-RES");
             else strcpy(token.nome, "ID");
+
+            coluna++;
         }
 
         else if (isdigit(input[index_input]))
@@ -144,6 +147,8 @@ void analisador_lexicografico(char input[45], FILE * arquivo_saida, int linha, i
                         strcpy(token.nome, "NUM_FLT");
                 }
             }
+
+            coluna++;
         }
 
         else if (verificar_operador_char(input[index_input]))
@@ -195,8 +200,9 @@ void analisador_lexicografico(char input[45], FILE * arquivo_saida, int linha, i
                     strcpy(token.nome, "OP_ASS");
                     break;
             }
-        }
 
+            coluna++;
+        }
 
         else if (verificar_simbolo_char(input[index_input]))
         {
@@ -235,6 +241,8 @@ void analisador_lexicografico(char input[45], FILE * arquivo_saida, int linha, i
                     strcpy(token.nome, "SMB_COL");
                     break;
             }
+
+            coluna++;
         }
 
         else if (input[index_input] == '.')
@@ -247,6 +255,8 @@ void analisador_lexicografico(char input[45], FILE * arquivo_saida, int linha, i
                 strcpy(token.nome, "PONTO_FINAL");
                 index_input++;
             }
+
+            coluna++;
         }
 
         else 
@@ -254,8 +264,11 @@ void analisador_lexicografico(char input[45], FILE * arquivo_saida, int linha, i
             strcpy(token.lexema, "Caractere nao identificado");
             strcpy(token.nome, "ERRO");
             index_input++;
+
+            coluna++;
         }
 
+        token.coluna = coluna;
         registrar_token(arquivo_saida, token);
     }
 
