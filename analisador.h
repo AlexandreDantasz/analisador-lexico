@@ -90,6 +90,24 @@ void registrar_token(FILE * arquivo_saida, Token token)
     if (arquivo_saida) fprintf(arquivo_saida, "< %s, %s > (linha: %d, coluna: %d)\n", token.nome, token.lexema, token.linha, token.coluna);
 }
 
+/*
+    A função que irá representar o analisador léxico a seguir, recebe uma string como parâmetro
+    e fará o filtro dos caracteres por tipo. 
+
+    Filtros do analisador léxico: alfabético > digito > operadores > símbolos.
+    
+    Exemplo de funcionamento:
+
+    Imagine que a string passada por parâmetro seja "Exemplo;".
+    O analisador léxico irá filtrar primeiro por caracteres alfabéticos e armazenar isso em uma string chamada
+    "filtro_input", ou seja, após a filtragem, a variável filtro_input terá "Exemplo" como conteúdo. 
+    Enfim, o analisador registra o token "Exemplo" decidindo se ele é uma palavra reservada ou um identificador.
+    
+    Depois, o analisador irá filtrar por dígitos, operadores e, por último, símbolos. 
+    Ao filtrar por símbolos, a variável filtro_input terá como conteúdo ";". 
+    Assim, o analisador irá registrar o token ";" com a categoria de símbolo SMB_SEM.
+*/
+
 void analisador_lexicografico(char input[45], FILE * arquivo_saida, int linha, int coluna)
 {
     Token token;
@@ -98,6 +116,7 @@ void analisador_lexicografico(char input[45], FILE * arquivo_saida, int linha, i
     // A variável a seguir será responsável por separar o input por um único tipo de caractere. 
     // Exemplo: caso a string seja "program;" então a variável pode conter apenas
     // caracteres alfabéticos "program" ou apenas o delimitador ";"
+
     char filtro_input[45];
     
     int index_input = 0, index_filtro = 0, res;

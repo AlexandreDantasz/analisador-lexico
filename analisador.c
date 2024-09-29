@@ -28,12 +28,20 @@ int main()
 
     char verificador_linhas;
     int linha = 1, coluna = 0;
+
+    /*
+        O código a seguir apenas fará a concatenação da string "input" com a variável "caractere" 
+        até o momento que a variável "caractere" representar um caractere delimitador (espaço em branco ou \n).
+        Quando isso acontecer, o analisador léxico deverá analisar a string "input" e registrar os tokens de acordo
+        com a análise feita. 
+    */
+
     while ((character = fgetc(arquivo_entrada)) != EOF)
     {
 
         if (character == '\n')
         {
-            input[index] = '\0';
+            input[index] = '\0'; // isso representa o final da string, ou seja, a concatenação acabou.
             analisador_lexicografico(input, arquivo_saida, linha, coluna);
             apagar_string(input, &index);
             linha++;
@@ -45,7 +53,7 @@ int main()
             {
                 input[index] = '\0';
                 analisador_lexicografico(input, arquivo_saida, linha, coluna);
-                coluna = coluna + strlen(input) + 1;
+                coluna = coluna + strlen(input) + 1; 
                 apagar_string(input, &index);
             }
             else 
@@ -62,11 +70,8 @@ int main()
         }
     }
 
-    /*
-        Essa parte do código analisa lexicamente o último caractere inserido no input.
-        O código anterior apenas fazia a concatenação da string com o caractere 
-        até encontrar um caractere delimitador (espaço em branco ou \0) para enviar para a análise léxica. 
-    */
+
+    // Essa parte do código analisa lexicamente o último caractere inserido no input.
 
     if (character != '\0' && character != ' ')
     {
