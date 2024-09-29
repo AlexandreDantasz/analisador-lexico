@@ -95,8 +95,6 @@ void analisador_lexicografico(char input[45], FILE * arquivo_saida, int linha, i
     Token token;
     token.linha = linha;
 
-    coluna--;
-
     // A variável a seguir será responsável por separar o input por um único tipo de caractere. 
     // Exemplo: caso a string seja "program;" então a variável pode conter apenas
     // caracteres alfabéticos "program" ou apenas o delimitador ";"

@@ -27,7 +27,7 @@ int main()
     }
 
     char verificador_linhas;
-    int linha = 1, coluna = 1;
+    int linha = 1, coluna = 0;
     while ((character = fgetc(arquivo_entrada)) != EOF)
     {
 
@@ -60,8 +60,20 @@ int main()
                 input[index++] = character;
             }
         }
-
     }
+
+    /*
+        Essa parte do código analisa lexicamente o último caractere inserido no input.
+        O código anterior apenas fazia a concatenação da string com o caractere 
+        até encontrar um caractere delimitador (espaço em branco ou \0) para enviar para a análise léxica. 
+    */
+
+    if (character != '\0' && character != ' ')
+    {
+        input[index] = '\0';
+        analisador_lexicografico(input, arquivo_saida, linha, coluna);
+    }
+    
 
     fclose(arquivo_entrada);
     fclose(arquivo_saida);
