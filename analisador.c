@@ -1,5 +1,61 @@
 #include "analisador.h"
 
+
+typedef enum {
+    TOKEN_ERROR,
+    TOKEN_EOF
+} TokenType;
+
+typedef struct TokenErro {
+    TokenType type;
+    char value[MAX_TOKEN_SIZE];
+    int line;
+    int column;
+} TokenErro;
+
+// Função get_next_token para leitura de tokens de input.pas
+TokenErro get_next_token(FILE *file, int *line, int *column) {
+    TokenErro token;
+    token.type = TOKEN_EOF;
+    token.value[0] = '\0';
+
+    char ch;
+    while ((ch = fgetc(file)) != EOF) {
+        (*column)++;
+        if (ch == '\n') {
+            (*line)++;
+            *column = 0;
+            continue;
+        }
+
+        if (isspace(ch)) {
+            continue;
+        }
+
+        // Se encontrar um caractere inválido
+        if (!isalnum(ch) && !strchr("+-*/=", ch)) {
+            token.type = TOKEN_ERROR;
+            token.value[0] = ch;
+            token.value[1] = '\0';
+            return token;
+        }
+
+        // Placeholder para token válido
+        token.type = TOKEN_EOF;
+        return token;
+    }
+
+    token.type = TOKEN_EOF;
+    return token;
+}
+
+void report_error(TokenErro token, int line, int column) {
+    printf("Error: Invalid token '%s' at line %d, column %d\n", token.value, line, column);
+}
+
+// Função principal para processamento do arquivo input.pas
+
+
 void apagar_string(char * input, int * index)
 {
     strcpy(input, "");
@@ -8,10 +64,28 @@ void apagar_string(char * input, int * index)
 
 int main()
 {
+     FILE *file = fopen("input.pas", "r");
+    if (!file) {
+        fprintf(stderr, "Could not open file.\n");
+        return 1;
+    }
+
+    int line = 1, column = 0;
+    TokenErro token;
+
+    do {
+        token = get_next_token(file, &line, &column);
+        if (token.type == TOKEN_ERROR) {
+            report_error(token, line, column);
+        }
+    } while (token.type != TOKEN_EOF);
+
+    fclose(file);
+
     FILE * arquivo_entrada, * arquivo_saida;
     char input[45] = "", character;
     int index = 0;
-    arquivo_entrada = fopen("input.txt", "rt");
+    arquivo_entrada = fopen("input.pas", "rt");
     arquivo_saida = fopen("output.lex", "w");
 
     if (!arquivo_entrada)
@@ -26,7 +100,6 @@ int main()
         return -1;
     }
 
-    char verificador_linhas;
     int linha = 1, coluna = 0;
 
     /*
