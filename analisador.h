@@ -5,6 +5,8 @@
 
 #ifndef ANALISADOR_H
 #define ANALISADOR_H
+#define MAX_TOKEN_SIZE 100
+#define MAX_LINE_LENGHT 1024
 
 const char tabela_simbolos [12][20] = 
 {
@@ -69,9 +71,10 @@ int verificar_simbolo_char(char input)
 int verificar_numero(char input[45])
 {
     int res = -1;
+    // 2.5
     for (int i = 0; res != 0 && input[i] != '\0'; i++)
     {
-        if (res == 1 && input[i] == '.') res = 2;
+        if (res == 2 || (res == 1 && input[i] == '.')) res = 2;
         else
         {
             if (isdigit(input[i]) && res != 2) res = 1;
