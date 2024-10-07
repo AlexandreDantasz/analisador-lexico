@@ -2,13 +2,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h> // isalpha, isdigit, isspace
+#include "tabelaSimbolos.c"
 
 #ifndef ANALISADOR_H
 #define ANALISADOR_H
 #define MAX_TOKEN_SIZE 100
 #define MAX_LINE_LENGHT 1024
 
-const char tabela_simbolos [12][20] = 
+TabelaSimbolos tabela;
+
+const char palavras_reservadas [12][20] = 
 {
     "program", "var", "integer", "real", "boolean",
     "begin", "end", "if", "then", "else", "while", "do"
@@ -24,7 +27,7 @@ int comparar_tabela(char input[45])
 {
     for (int i = 0; i < 12; i++)
     {
-        if (!strcmp(input, tabela_simbolos[i])) return 1;
+        if (!strcmp(input, palavras_reservadas[i])) return 1;
     }
 
     return 0;
@@ -139,7 +142,15 @@ void analisador_lexicografico(char input[45], FILE * arquivo_saida, int linha, i
             strcpy(token.lexema, filtro_input);
 
             if (comparar_tabela(filtro_input)) strcpy(token.nome, "PAL-RES");
-            else strcpy(token.nome, "ID");
+            else 
+            {
+                push(&tabela, filtro_input);
+                char str[10], output[20];
+                itoa(procurarSimbolo(&tabela, filtro_input), str, 10);
+                sprintf(output, "Indice: %s", str);
+                strcpy(token.lexema, output);
+                strcpy(token.nome , "ID");
+            }
 
             coluna++;
         }
@@ -290,8 +301,7 @@ void analisador_lexicografico(char input[45], FILE * arquivo_saida, int linha, i
 
         token.coluna = coluna;
         registrar_token(arquivo_saida, token);
-    }
-
+    } 
     
 }
 

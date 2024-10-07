@@ -155,5 +155,8 @@ int main()
 
     fclose(arquivo_entrada);
     fclose(arquivo_saida);
+
+    deletarTabela(&tabela);
+
     return 0;
 }
