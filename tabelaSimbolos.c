@@ -29,8 +29,11 @@ int push(TabelaSimbolos * tabela, const char * str)
 
     if (p)
     {
-        if (!tabela->head)
+        if (!tabela->head) {
             tabela->head = p;
+            tabela->iterator = tabela->head;
+        }
+            
         else 
             tabela->tail->next = p;
         
@@ -89,4 +92,16 @@ void deletarTabela(TabelaSimbolos * tabela)
         deletarNo(tabela->head);
         tabela->head = p;
     }
+}
+
+int obterToken(TabelaSimbolos * tabela, char * str) {
+
+    if (tabela->iterator) {
+        strcpy(str, tabela->iterator->simbolo);
+        tabela->iterator = tabela->iterator->next;
+        return 1;
+    }
+
+    return 0;
+
 }

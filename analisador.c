@@ -156,6 +156,17 @@ int main()
     fclose(arquivo_entrada);
     fclose(arquivo_saida);
 
+    /*
+        Essa parte do código utiliza a função que será usada no analisador sintático
+    */
+
+    char str[45];
+    obterToken(&tabela, str);
+    printf("%s\n", str);
+
+    obterToken(&tabela, str);
+    printf("%s", str);
+
     deletarTabela(&tabela);
 
     return 0;

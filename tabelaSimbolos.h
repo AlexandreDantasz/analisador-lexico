@@ -11,6 +11,7 @@ typedef struct tabelaSimbolos
 {
     int size;
     No * head, * tail;
+    No * iterator;
 
 } TabelaSimbolos;
 
@@ -21,6 +22,7 @@ int push(TabelaSimbolos * tabela, const char * str);
 void pop(TabelaSimbolos * tabela);
 int procurarSimboloRec(No * no, const char * str, int * index);
 int procurarSimbolo(TabelaSimbolos * tabela, const char * str);
+int obterToken(TabelaSimbolos * tabela, char * str);
 
 void deletarTabela(TabelaSimbolos * tabela);
 
