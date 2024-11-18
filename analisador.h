@@ -13,6 +13,9 @@
 static TabelaSimbolos tabela;
 static TabelaTokens tabelaTokens;
 
+static int erroLexico = 0;
+static NoToken comandoAnterior = NULL;
+
 const char palavras_reservadas [12][20] = 
 {
     "program", "var", "integer", "real", "boolean",
@@ -92,7 +95,8 @@ void registrar_token(FILE * arquivo_saida, Token token)
     if (arquivo_saida) 
     {
         fprintf(arquivo_saida, "< %s, %s > (linha: %d, coluna: %d)\n", token.nome, token.lexema, token.linha, token.coluna);
-        pushToken(&tabelaTokens, token);
+        if (!erroLexico) 
+            pushToken(&tabelaTokens, token);
     }
 }
 
@@ -296,6 +300,8 @@ void analisador_lexicografico(char input[45], FILE * arquivo_saida, int linha, i
             strcpy(token.lexema, "Caractere nao identificado");
             strcpy(token.nome, "ERRO");
             index_input++;
+
+            erroLexico = 1;
 
             coluna++;
         }
@@ -519,10 +525,10 @@ static void expressao(TabelaTokens * tabela)
 
     if 
     (
-        !strcmp(atualToken(tabela).lexema, "OP_EQ") ||
+        !strcmp(atualToken(tabela).nome, "OP_EQ") ||
         (
-            !strcmp(atualToken(tabela).lexema, "OP_GT") ||
-            !strcmp(atualToken(tabela).lexema, "OP_LT")
+            !strcmp(atualToken(tabela).nome, "OP_GT") ||
+            !strcmp(atualToken(tabela).nome, "OP_LT")
         )
     )
     {
@@ -530,15 +536,17 @@ static void expressao(TabelaTokens * tabela)
 
         if 
         (
-            !strcmp(atualToken(tabela).lexema, "OP_EQ") ||
+            !strcmp(atualToken(tabela).nome, "OP_EQ") ||
             (
-                !strcmp(atualToken(tabela).lexema, "OP_GT") ||
-                !strcmp(atualToken(tabela).lexema, "OP_LT")
+                !strcmp(atualToken(tabela).nome, "OP_GT") ||
+                !strcmp(atualToken(tabela).nome, "OP_LT")
             )
         )
         {
             proximoToken(tabela);
         }
+
+        
 
         expressaoSimples(tabela);
     }
@@ -546,8 +554,6 @@ static void expressao(TabelaTokens * tabela)
 
 static void atribuicao(TabelaTokens * tabela)
 {
-    printf("Atribuicao: %s\n", atualToken(tabela).nome);
-
     if (!consumirToken(tabela, "ID"))
     {
         printf("ERRO: identificador esperado\n");
@@ -572,9 +578,6 @@ static void atribuicao(TabelaTokens * tabela)
 
 static void comando(TabelaTokens * tabela)
 {
-    printf("%s\n", atualToken(tabela).lexema);
-    printf("%s\n", atualToken(tabela).nome);
-
     if (!strcmp(atualToken(tabela).nome, "ID"))
     {
         atribuicao(tabela);
@@ -593,6 +596,7 @@ static void comando(TabelaTokens * tabela)
     }
     else
     {
+        printf("%s\n", atualToken(tabela).lexema);
         printf("ERRO comando\n");
         exit(1);
     }
@@ -610,24 +614,26 @@ void comandoComposto(TabelaTokens * tabela)
 
     comando(tabela);
 
-    if (!strcmp(atualToken(tabela).lexema, ";"))
+    while (strcmp(atualToken(tabela).lexema, "end"))
     {
         proximoToken(tabela);
         comando(tabela);
     }
 
+
     if (strcmp(atualToken(tabela).lexema, "end"))
     {
+        printf("%s\n", atualToken(tabela).lexema);
         printf("ERRO: Esperado palavra reservada 'end'\n");
         exit(1);
     }
 
-
+    proximoToken(tabela);
 }
 
 void comandoRepetitivo(TabelaTokens* tabela)
 {
-    if(!consumirToken(tabela, "PAL_RES"))
+    if(!consumirToken(tabela, "PAL-RES"))
     {
         printf("ERRO: while esperado\n");
         exit(1);
@@ -648,7 +654,7 @@ void comandoRepetitivo(TabelaTokens* tabela)
 
 void expressaoCondicional(TabelaTokens* tabela)
 {
-    if(!consumirToken(tabela, "PAL_RES"))
+    if(!consumirToken(tabela, "PAL-RES"))
     {
         printf("ERRO: IF esperado\n");
         exit(1);
@@ -658,15 +664,17 @@ void expressaoCondicional(TabelaTokens* tabela)
 
     if (strcmp(atualToken(tabela).lexema, "then"))
     {
+        printf("%s\n", atualToken(tabela).lexema);
         printf("ERRO: then esperado\n");
         exit(1);    
     }
 
-    // mark printf("%s", atualToken(tabela).lexema);
-
     proximoToken(tabela);
 
     comando(tabela);
+
+    // captura do ';'
+    proximoToken(tabela);
 
     if (!strcmp(atualToken(tabela).nome, "else"))
     {
