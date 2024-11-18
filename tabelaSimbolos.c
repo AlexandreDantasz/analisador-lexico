@@ -105,3 +105,23 @@ int obterToken(TabelaSimbolos * tabela, char * str) {
     return 0;
 
 }
+
+int proximo(TabelaSimbolos * tabela)
+{
+    if (tabela->iterator)
+    {
+        tabela->iterator = tabela->iterator->next;
+        return 1;
+    }
+
+    return 0;
+}
+
+char * atual(TabelaSimbolos * tabelaSimbolos)
+{
+    if (tabelaSimbolos->iterator)
+    {
+        return tabelaSimbolos->iterator->simbolo;
+    }
+    return NULL;
+}

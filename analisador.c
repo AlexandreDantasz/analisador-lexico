@@ -169,5 +169,7 @@ int main()
 
     deletarTabela(&tabela);
 
+    programa(&tabelaTokens);
+
     return 0;
 }

@@ -3,25 +3,21 @@
 #include <string.h>
 #include <ctype.h> // isalpha, isdigit, isspace
 #include "tabelaSimbolos.c"
+#include "tabelaTokens.c"
 
 #ifndef ANALISADOR_H
 #define ANALISADOR_H
 #define MAX_TOKEN_SIZE 100
 #define MAX_LINE_LENGHT 1024
 
-TabelaSimbolos tabela;
+static TabelaSimbolos tabela;
+static TabelaTokens tabelaTokens;
 
 const char palavras_reservadas [12][20] = 
 {
     "program", "var", "integer", "real", "boolean",
     "begin", "end", "if", "then", "else", "while", "do"
 }; 
-
-typedef struct Token
-{
-    char nome[45], lexema[45];
-    int linha, coluna;
-} Token;
 
 int comparar_tabela(char input[45])
 {
@@ -93,8 +89,13 @@ int verificar_numero(char input[45])
 // Portanto, antes do parâmetro ser passado, é necessário que o arquivo seja aberto e o modo de escrita esteja habilltado
 void registrar_token(FILE * arquivo_saida, Token token)
 {
-    if (arquivo_saida) fprintf(arquivo_saida, "< %s, %s > (linha: %d, coluna: %d)\n", token.nome, token.lexema, token.linha, token.coluna);
+    if (arquivo_saida) 
+    {
+        fprintf(arquivo_saida, "< %s, %s > (linha: %d, coluna: %d)\n", token.nome, token.lexema, token.linha, token.coluna);
+        pushToken(&tabelaTokens, token);
+    }
 }
+
 
 /*
     A função que irá representar o analisador léxico a seguir, recebe uma string como parâmetro
@@ -305,5 +306,374 @@ void analisador_lexicografico(char input[45], FILE * arquivo_saida, int linha, i
     
 }
 
+// Aqui se encontra as funções do analisador sintático
+
+static int consumirToken(TabelaTokens * tabela, const char * esperado)
+{
+    // para o funcionamento da declaração de variáveis
+
+    if (!strcmp(esperado, "VAR"))
+    {
+        if (!strcmp(atualToken(tabela).lexema, "var"))
+        {
+            proximoToken(tabela);
+            return 1;
+        }
+        return 0;
+    }
+    else if (!strcmp(esperado, "TIPO"))
+    {
+        if 
+        (
+            !strcmp(atualToken(tabela).lexema, "integer") ||
+            !strcmp(atualToken(tabela).lexema, "real") ||
+            !strcmp(atualToken(tabela).lexema, "boolean")
+        )
+        {
+            proximoToken(tabela);
+            return 1;
+        }
+
+        return 0;
+    }
+    else 
+    {
+        if (!strcmp(atualToken(tabela).nome, esperado))
+        {
+            proximoToken(tabela);
+            return 1;
+        }
+
+        return 0;
+    }
+    
+}
+
+static void programa(TabelaTokens * tabela)
+{
+    if (strcmp(atualToken(tabela).lexema, "program"))
+    {
+        printf("ERRO: esperado palavra reservada 'program'\n");
+        exit(1);
+    }
+
+    proximoToken(tabela);
+
+    if (!consumirToken(tabela, "ID"))
+    {
+        printf("ERRO: esperado identificador apos 'PROGRAM'\n");
+        printf("%s\n", atualToken(tabela).lexema);
+        exit(1);
+    }
+
+    if (!consumirToken(tabela, "SMB_SEM"))
+    {
+        printf("ERRO: esperado ';' após o identificador\n");
+        exit(1);
+    }
+
+    bloco(tabela);
+
+    
+}
+
+static void listaIdentificadores(TabelaTokens * tabela)
+{
+    if (!consumirToken(tabela, "ID"))
+    {
+        printf("ERRO: Identificador esperado após palavra reservada 'var'\n");
+        exit(1);
+    }
+
+    while (consumirToken(tabela, "SMB_COM"))
+    {
+        if (!consumirToken(tabela, "ID"))
+        {
+            printf("ERRO: Identificador esperado após ','\n");
+            exit(1);
+        }
+    }
+
+}
+
+static void tipo(TabelaTokens * tabela)
+{
+    if (!consumirToken(tabela, "TIPO"))
+    {
+        printf("ERRO: Esperado tipo (integer, real ou boolean) apos ':'\n");
+        exit(1);
+    }
+}
+
+static void declaracaoVariaveis(TabelaTokens * tabela)
+{
+    listaIdentificadores(tabela);
+
+    if (!consumirToken(tabela, "SMB_COL"))
+    {
+        printf("ERRO: ':' esperado após identificadores\n");
+        exit(1);
+    }
+
+    tipo(tabela);
+}
+
+static void declaracaoVariaveisEscopo(TabelaTokens * tabela)
+{
+    while (consumirToken(tabela, "VAR"))
+    {
+        declaracaoVariaveis(tabela);
+
+        if (!consumirToken(tabela, "SMB_SEM"))
+        {
+            printf("ERRO: Esperado ';' após declaração de variáveis\n");
+            exit(1);
+        }
+
+        while (consumirToken(tabela, "ID"))
+        {
+            declaracaoVariaveis(tabela);
+
+            if (!consumirToken(tabela, "SMB_SEM"))
+            {
+                printf("ERRO: Esperado ';' após declaração de variáveis\n");
+                exit(1);
+            }
+        }
+    }
+}
+
+void bloco(TabelaTokens * tabela)
+{
+    declaracaoVariaveisEscopo(tabela);
+    comandoComposto(tabela);
+}
+
+static void variavel(TabelaTokens * tabela)
+{
+    if (!consumirToken(tabela, "ID"))
+    {
+        printf("ERRO: Esperado uma variável na atribuicao\n");
+        exit(1);
+    }
+}
+
+static void numero(TabelaTokens * tabela)
+{
+    if (!consumirToken(tabela, "NUM_INT") && !consumirToken(tabela, "NUM_FLT"))
+    {
+        printf("ERRO: Esperado um numero (integer ou float)\n");
+        exit(1);
+    }
+}
+
+static void fator(TabelaTokens * tabela)
+{
+    NoToken * temp = tabela->iterator;
+    if (consumirToken(tabela, "ID"))
+    {
+        tabela->iterator = temp;
+        variavel(tabela);
+    }
+    else
+    {
+        if (consumirToken(tabela, "NUM_INT") || consumirToken(tabela, "NUM_FLT"))
+        {
+            tabela->iterator = temp;
+            numero(tabela);
+        }
+        else
+        {
+            printf("ERRO fator\n");
+            exit(1);
+        }
+        
+    }
+
+}
+
+static void termo(TabelaTokens * tabela)
+{
+    fator(tabela);
+
+    if (!strcmp(atualToken(tabela).lexema, "OP_MUL") || !strcmp(atualToken(tabela).lexema, "OP_DIV"))
+    {
+        proximoToken(tabela);
+        fator(tabela);
+    }
+}
+
+static void expressaoSimples(TabelaTokens * tabela)
+{
+    if (consumirToken(tabela, "OP_AD") || consumirToken(tabela, "OP_MIN")) 
+        termo(tabela);
+    else 
+        termo(tabela);
+    while (consumirToken(tabela, "OP_AD") || consumirToken(tabela, "OP_MIN")) 
+        termo(tabela);
+}
+
+static void expressao(TabelaTokens * tabela)
+{
+    expressaoSimples(tabela);
+
+    if 
+    (
+        !strcmp(atualToken(tabela).lexema, "OP_EQ") ||
+        (
+            !strcmp(atualToken(tabela).lexema, "OP_GT") ||
+            !strcmp(atualToken(tabela).lexema, "OP_LT")
+        )
+    )
+    {
+        proximoToken(tabela);
+
+        if 
+        (
+            !strcmp(atualToken(tabela).lexema, "OP_EQ") ||
+            (
+                !strcmp(atualToken(tabela).lexema, "OP_GT") ||
+                !strcmp(atualToken(tabela).lexema, "OP_LT")
+            )
+        )
+        {
+            proximoToken(tabela);
+        }
+
+        expressaoSimples(tabela);
+    }
+}
+
+static void atribuicao(TabelaTokens * tabela)
+{
+    printf("Atribuicao: %s\n", atualToken(tabela).nome);
+
+    if (!consumirToken(tabela, "ID"))
+    {
+        printf("ERRO: identificador esperado\n");
+        exit(1);
+    }
+
+    if (!consumirToken(tabela, "SMB_COL"))
+    {
+        printf("ERRO: ':' esperado\n");
+        exit(1);
+    }
+
+    if (!consumirToken(tabela, "OP_EQ"))
+    {
+        printf("ERRO: '=' esperado\n");
+        exit(1);
+    }
+
+    
+    expressao(tabela);
+}
+
+static void comando(TabelaTokens * tabela)
+{
+    printf("%s\n", atualToken(tabela).lexema);
+    printf("%s\n", atualToken(tabela).nome);
+
+    if (!strcmp(atualToken(tabela).nome, "ID"))
+    {
+        atribuicao(tabela);
+    }
+    else if (!strcmp(atualToken(tabela).lexema, "begin"))
+    {
+        comandoComposto(tabela);
+    }
+    else if (!strcmp(atualToken(tabela).lexema, "if"))
+    {
+        expressaoCondicional(tabela);
+    }
+    else if (!strcmp(atualToken(tabela).lexema, "while"))
+    {
+        comandoRepetitivo(tabela);
+    }
+    else
+    {
+        printf("ERRO comando\n");
+        exit(1);
+    }
+}
+
+void comandoComposto(TabelaTokens * tabela)
+{
+    if (strcmp(atualToken(tabela).lexema, "begin"))
+    {
+        printf("ERRO: Esperado palavra reservada 'begin'\n");
+        exit(1);
+    }
+
+    proximoToken(tabela);
+
+    comando(tabela);
+
+    if (!strcmp(atualToken(tabela).lexema, ";"))
+    {
+        proximoToken(tabela);
+        comando(tabela);
+    }
+
+    if (strcmp(atualToken(tabela).lexema, "end"))
+    {
+        printf("ERRO: Esperado palavra reservada 'end'\n");
+        exit(1);
+    }
+
+
+}
+
+void comandoRepetitivo(TabelaTokens* tabela)
+{
+    if(!consumirToken(tabela, "PAL_RES"))
+    {
+        printf("ERRO: while esperado\n");
+        exit(1);
+    }
+
+    expressao(tabela);
+
+    if (strcmp(atualToken(tabela).nome, "do"))
+    {
+        printf("ERRO: do esperado\n");
+        exit(1);  
+    }
+
+    proximoToken(tabela);
+
+    comando(tabela);
+}
+
+void expressaoCondicional(TabelaTokens* tabela)
+{
+    if(!consumirToken(tabela, "PAL_RES"))
+    {
+        printf("ERRO: IF esperado\n");
+        exit(1);
+    }
+
+    expressao(tabela);
+
+    if (strcmp(atualToken(tabela).lexema, "then"))
+    {
+        printf("ERRO: then esperado\n");
+        exit(1);    
+    }
+
+    // mark printf("%s", atualToken(tabela).lexema);
+
+    proximoToken(tabela);
+
+    comando(tabela);
+
+    if (!strcmp(atualToken(tabela).nome, "else"))
+    {
+        proximoToken(tabela);
+        comando(tabela);
+    }
+    
+}
 
 #endif
