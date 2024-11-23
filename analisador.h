@@ -574,9 +574,7 @@ static void atribuicao(TabelaTokens * tabela)
 
     if (!consumirToken(tabela, "OP_ASS"))
     {
-        printf("%s\n", atualToken(tabela).nome);
-        printf("%s\n", atualToken(tabela).lexema);
-        printf("ERRO: ':' esperado\n");
+        printf("ERRO: ':=' esperado\n");
         exit(1);
     }
 
