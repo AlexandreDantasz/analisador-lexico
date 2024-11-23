@@ -605,7 +605,7 @@ static void comando(TabelaTokens * tabela)
     {
         comandoRepetitivo(tabela);
     }
-    else
+    else if (strcmp(atualToken(tabela).lexema, "end"))
     {
         printf("COMANDO: %s\n", atualToken(tabela).lexema);
         printf("ERRO comando\n");
