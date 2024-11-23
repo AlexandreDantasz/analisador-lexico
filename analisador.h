@@ -12,9 +12,7 @@
 
 static TabelaSimbolos tabela;
 static TabelaTokens tabelaTokens;
-
 static int erroLexico = 0;
-static NoToken comandoAnterior = NULL;
 
 const char palavras_reservadas [12][20] = 
 {
@@ -45,12 +43,13 @@ int verificar_operador(char input[45])
     if (!strcmp(input, "<")) return 9;
     if (!strcmp(input, "-")) return 10;
     if (!strcmp(input, ":=")) return 11;
+    if (!strcmp(input, ":")) return 12;
     return 0;
 }
 
 int verificar_operador_char(char input)
 {
-    return (input == '=' || input == '*' || input == '/' || input == '>' || input == '<' || input == '+' || input == '-'); 
+    return (input == '=' || input == '*' || input == '/' || input == '>' || input == '<' || input == '+' || input == '-' || input == ':'); 
 }
 
 int verificar_simbolo(char input[45])
@@ -94,8 +93,11 @@ void registrar_token(FILE * arquivo_saida, Token token)
 {
     if (arquivo_saida) 
     {
+        if (!strcmp(token.nome, "ERRO"))
+            erroLexico = 1;
+
         fprintf(arquivo_saida, "< %s, %s > (linha: %d, coluna: %d)\n", token.nome, token.lexema, token.linha, token.coluna);
-        if (!erroLexico) 
+        if (!erroLexico)
             pushToken(&tabelaTokens, token);
     }
 }
@@ -235,6 +237,9 @@ void analisador_lexicografico(char input[45], FILE * arquivo_saida, int linha, i
                 case 11:
                     strcpy(token.nome, "OP_ASS");
                     break;
+                case 12:
+                    strcpy(token.nome, "SMB_COL");
+                    break;
             }
 
             coluna++;
@@ -300,8 +305,6 @@ void analisador_lexicografico(char input[45], FILE * arquivo_saida, int linha, i
             strcpy(token.lexema, "Caractere nao identificado");
             strcpy(token.nome, "ERRO");
             index_input++;
-
-            erroLexico = 1;
 
             coluna++;
         }
@@ -374,11 +377,21 @@ static void programa(TabelaTokens * tabela)
 
     if (!consumirToken(tabela, "SMB_SEM"))
     {
-        printf("ERRO: esperado ';' após o identificador\n");
+        printf("ERRO: esperado ';' apos o identificador\n");
         exit(1);
     }
 
     bloco(tabela);
+
+    if (!strcmp(atualToken(tabela).lexema, ".") && tabela->iterator->next == NULL)
+    {
+        printf("Analise sintatica concluida com sucesso.\n");
+    }
+    else
+    {
+        printf("ERRO: esperado unico '.' apos o fim de programa\n");
+        exit(1);
+    }
 
     
 }
@@ -417,7 +430,7 @@ static void declaracaoVariaveis(TabelaTokens * tabela)
 
     if (!consumirToken(tabela, "SMB_COL"))
     {
-        printf("ERRO: ':' esperado após identificadores\n");
+        printf("ERRO: ':' esperado apos identificadores\n");
         exit(1);
     }
 
@@ -526,10 +539,10 @@ static void expressao(TabelaTokens * tabela)
     if 
     (
         !strcmp(atualToken(tabela).nome, "OP_EQ") ||
-        (
-            !strcmp(atualToken(tabela).nome, "OP_GT") ||
-            !strcmp(atualToken(tabela).nome, "OP_LT")
-        )
+        !strcmp(atualToken(tabela).nome, "OP_GT") ||
+        !strcmp(atualToken(tabela).nome, "OP_LT") ||
+        !strcmp(atualToken(tabela).nome, "OP_GE") ||
+        !strcmp(atualToken(tabela).nome, "OP_NE")
     )
     {
         proximoToken(tabela);
@@ -537,16 +550,14 @@ static void expressao(TabelaTokens * tabela)
         if 
         (
             !strcmp(atualToken(tabela).nome, "OP_EQ") ||
-            (
-                !strcmp(atualToken(tabela).nome, "OP_GT") ||
-                !strcmp(atualToken(tabela).nome, "OP_LT")
-            )
+            !strcmp(atualToken(tabela).nome, "OP_GT") ||
+            !strcmp(atualToken(tabela).nome, "OP_LT") ||
+            !strcmp(atualToken(tabela).nome, "OP_GE") ||
+            !strcmp(atualToken(tabela).nome, "OP_NE")
         )
         {
             proximoToken(tabela);
         }
-
-        
 
         expressaoSimples(tabela);
     }
@@ -554,6 +565,7 @@ static void expressao(TabelaTokens * tabela)
 
 static void atribuicao(TabelaTokens * tabela)
 {
+
     if (!consumirToken(tabela, "ID"))
     {
         printf("ERRO: identificador esperado\n");
@@ -562,6 +574,8 @@ static void atribuicao(TabelaTokens * tabela)
 
     if (!consumirToken(tabela, "SMB_COL"))
     {
+        printf("%s\n", atualToken(tabela).nome);
+        printf("%s\n", atualToken(tabela).lexema);
         printf("ERRO: ':' esperado\n");
         exit(1);
     }
@@ -578,6 +592,9 @@ static void atribuicao(TabelaTokens * tabela)
 
 static void comando(TabelaTokens * tabela)
 {
+    // printf("%s\n", atualToken(tabela).lexema);
+    // printf("%s\n", atualToken(tabela).nome);
+
     if (!strcmp(atualToken(tabela).nome, "ID"))
     {
         atribuicao(tabela);
@@ -596,7 +613,7 @@ static void comando(TabelaTokens * tabela)
     }
     else
     {
-        printf("%s\n", atualToken(tabela).lexema);
+        printf("COMANDO: %s\n", atualToken(tabela).lexema);
         printf("ERRO comando\n");
         exit(1);
     }
@@ -620,20 +637,20 @@ void comandoComposto(TabelaTokens * tabela)
         comando(tabela);
     }
 
-
     if (strcmp(atualToken(tabela).lexema, "end"))
     {
-        printf("%s\n", atualToken(tabela).lexema);
         printf("ERRO: Esperado palavra reservada 'end'\n");
         exit(1);
     }
 
     proximoToken(tabela);
+
+
 }
 
 void comandoRepetitivo(TabelaTokens* tabela)
 {
-    if(!consumirToken(tabela, "PAL-RES"))
+    if(!consumirToken(tabela, "PAL_RES"))
     {
         printf("ERRO: while esperado\n");
         exit(1);
@@ -664,7 +681,7 @@ void expressaoCondicional(TabelaTokens* tabela)
 
     if (strcmp(atualToken(tabela).lexema, "then"))
     {
-        printf("%s\n", atualToken(tabela).lexema);
+        printf("THEN: %s\n", atualToken(tabela).lexema);
         printf("ERRO: then esperado\n");
         exit(1);    
     }
@@ -673,14 +690,14 @@ void expressaoCondicional(TabelaTokens* tabela)
 
     comando(tabela);
 
-    // captura do ';'
-    proximoToken(tabela);
-
-    if (!strcmp(atualToken(tabela).nome, "else"))
+    if (!strcmp(atualToken(tabela).lexema, "else"))
     {
         proximoToken(tabela);
         comando(tabela);
     }
+
+    // consumir ';'
+    proximoToken(tabela);
     
 }
 

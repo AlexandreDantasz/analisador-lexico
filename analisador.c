@@ -155,21 +155,18 @@ int main()
 
     fclose(arquivo_entrada);
     fclose(arquivo_saida);
-    deletarTabela(&tabela);
 
-    // analisador sintático
+    /*
+        Essa parte do código utiliza a função que será usada no analisador sintático
+    */
 
     if (!erroLexico)
-    {
         programa(&tabelaTokens);
-        deletarTabelaToken(&tabelaTokens);
-    }
     else
-    {
-        printf("ERRO LEXICO DETECTADO\n");
-        exit(1);
-    }
-    
+        puts("ERRO lexico encontrado");
+
+    deletarTabela(&tabela);
+    deletarTabelaToken(&tabelaTokens);
 
     return 0;
 }
