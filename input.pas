@@ -3,6 +3,6 @@ var x, y: integer;
 begin
     x := 10;
     y := x + 5;
-    if y > 10 then
+    while y > 10 do
         x := x - 1;
 end.

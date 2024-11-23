@@ -644,7 +644,7 @@ void comandoComposto(TabelaTokens * tabela)
 
 void comandoRepetitivo(TabelaTokens* tabela)
 {
-    if(!consumirToken(tabela, "PAL_RES"))
+    if(!consumirToken(tabela, "PAL-RES"))
     {
         printf("ERRO: while esperado\n");
         exit(1);
@@ -652,7 +652,7 @@ void comandoRepetitivo(TabelaTokens* tabela)
 
     expressao(tabela);
 
-    if (strcmp(atualToken(tabela).nome, "do"))
+    if (strcmp(atualToken(tabela).lexema, "do"))
     {
         printf("ERRO: do esperado\n");
         exit(1);  
