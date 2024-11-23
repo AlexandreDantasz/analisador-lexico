@@ -572,17 +572,11 @@ static void atribuicao(TabelaTokens * tabela)
         exit(1);
     }
 
-    if (!consumirToken(tabela, "SMB_COL"))
+    if (!consumirToken(tabela, "OP_ASS"))
     {
         printf("%s\n", atualToken(tabela).nome);
         printf("%s\n", atualToken(tabela).lexema);
         printf("ERRO: ':' esperado\n");
-        exit(1);
-    }
-
-    if (!consumirToken(tabela, "OP_EQ"))
-    {
-        printf("ERRO: '=' esperado\n");
         exit(1);
     }
 
